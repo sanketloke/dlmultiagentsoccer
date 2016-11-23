@@ -20,6 +20,7 @@ class SoccerEnvironment(object):
             cmd.append("--offense-npcs="+str(self.arg["""offense-npcs"""]))
         if (int(self.arg["defense-agents"])>0):
             cmd.append("--defense-agents="+str(self.arg["""defense-agents"""]))
+        #cmd.append("--no-syn")
         print cmd
         self.p=subprocess.Popen(cmd)
         self.pid=self.p.pid

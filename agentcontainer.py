@@ -17,8 +17,6 @@ def debug():
     print 'Entering debug'
 
 
-
-
 class History(object):
 
     """Container for storing collection of states."""
@@ -27,16 +25,17 @@ class History(object):
         self.store=[]
         self.size=size
 
-    def addState(state):
-        self.store.append()
+    def addState(self,state):
+        self.store.append(state)
         self.checkConditionAndModify()
 
-    def checkConditionAndModify():
+    def checkConditionAndModify(self):
         if len(self.store)>self.size:
             self.store= self.store[len(self.store)-self.size:len(self.store)]
 
-    def getStates(k):
-        return self.store[len(self.store)-k:len(store)]
+    def getStates(self,k):
+        return self.store[len(self.store)-k:len(self.store)]
+
 
 
 class AgentContainer(object):
@@ -55,17 +54,18 @@ class AgentContainer(object):
     def run(self):
         print '-----------------------Starting Agent with ID:'+str(self.id)
         hfo = HFOEnvironment()
-        print MOVE
-        print SHOOT
-        print PASS
-        print DRIBBLE
-        print CATCH
+        # print MOVE
+        # print SHOOT
+        # print PASS
+        # print DRIBBLE
+        # print CATCH
         # Connect to the server with the specified
         # feature set. See feature sets in hfo.py/hfo.hpp.
         time.sleep(1)
         hfo.connectToServer(HIGH_LEVEL_FEATURE_SET,
         'bin/teams/base/config/formations-dt', 6000,
         'localhost', 'base_left', False)
+        rewards= []
 
         print '-----------------------Connection Successful Agent with ID:'+str(self.id)
         for episode in xrange(100):
@@ -83,7 +83,7 @@ class AgentContainer(object):
                 while (self.q.qsize())<self.teamSize:
                     time.sleep(0)
 
-                history = History()
+                self.history = History(10)
                 #From Queue , get states from other agents
                 stateCollection=list(self.q.queue)
 
@@ -93,12 +93,12 @@ class AgentContainer(object):
                 #Add the current state to history
                 self.history.addState([agentState,teamState,opponentState])
 
+                # Calculate reward for the last action
+                reward = self.calculateReward(self.history.getStates(3),agentState,teamState,opponentState,[],status)
+                print "Reward: "+str(reward)
+
                 # Update Parameters of the agent
                 self.agent.perceive(agentState,teamState,opponentState,reward)
-
-
-                # Calculate reward for the last action
-                reward = calculateReward(history.getStates(3),agentState,teamState,opponentState,[])
 
 
                 # # Predict Action to be performed
@@ -122,11 +122,41 @@ class AgentContainer(object):
                     with self.q.mutex:
                         self.q.queue.clear()
                 status = hfo.step()
-                # Check the outcome of the episode
 
-            # Check how the episode ended: if with a goal add to the reward
-            # if outside ball, or otherwise add huge penalty.
+            #     #If status is bad, update agent with different rewards and break
+            # while (self.q.qsize()!=0):
+            #     print "Previous:"+str(self.q.qsize())
+            #     time.sleep(0)
+            # print 'pass'
+            # #ONCE GAME IS DONE, perform last update
+            # # Perform last update
+            # # Get the vector of state features for the current state
+            # state = hfo.getState()
+            #
+            #
+            #
+            # #Adding into the queue for synchronization
+            # self.q.put(state)
+            # while (self.q.qsize())<self.teamSize:
+            #     print "Next:"+str(self.q.qsize())
+            #     time.sleep(0)
+            #
+            # self.history = History(10)
+            # #From Queue , get states from other agents
+            # stateCollection=list(self.q.queue)
+            #
+            # #Preprocess State
+            # agentState,teamState,opponentState= self.transformState(state,stateCollection,[])
+            #
+            # #Add the current state to history
+            # self.history.addState([agentState,teamState,opponentState])
+            #
+            # # Calculate reward for the last action
+            # reward = self.calculateReward(self.history.getStates(3),agentState,teamState,opponentState,[],status)
+            # print reward
 
+            # Update Parameters of the agent
+            #self.agent.perceive(agentState,teamState,opponentState,reward)
             print(' ID : '+ str(self.id) +' Episode %d ended with %s'%(episode, statusToString(status)))
             # Quit if the server goes down
             if status == SERVER_DOWN:
@@ -140,15 +170,31 @@ class AgentContainer(object):
 
 
 
-    def calculateReward(historyTuple,agentState,teamState,opponentState,rewardargs):
-        print 'Custom reward Function'
+    def calculateReward(self,historyTuple,agentState,teamState,opponentState,rewardargs,status):
+        if status==GOAL:
+            return 3
+        elif status == CAPTURED_BY_DEFENSE:
+            return -3
+        elif status== OUT_OF_BOUNDS:
+            return -3
+        elif status==OUT_OF_TIME:
+            return -2
+        #print 'Custom reward Function'
         reward =0
+        #Penalizes length of the match
         reward += -1
-        posessionreward= -3 * if agentState[5] == 0 else 0 # Take into account goal proximity
-        #Check if pass successful using historyTuple or may be find an alternative way of keeping track of successful passes
-        # passingreward=
-
-
+        # Calculates Proximity Reward
+        #print "Agent State: "+str(agentsta)
+        if agentState[6]<-1:
+            proximityReward=2 *agentState[6]
+        else:
+            proximityReward=-2 *agentState[6]
+        #Multiplicative Factor
+        posessionreward= 1 *proximityReward if agentState[5] == 0 else 0 # Take into account goal proximity
+        reward +=posessionreward
+        reward+=proximityReward
+        #Find a way to reward passing behavior skip for now
+        return reward
 
 
     """Takes as input: last k states, currentState, rewardargs
@@ -157,9 +203,9 @@ class AgentContainer(object):
       Team State (Size of (9 + T ) *T-1 )-> Simply concatenating agent state vectors of the teammates
       Opponent State ( 3*O ) -> Vector contains history information of each of the opponents information """
     def transformState(self,rawAgentState,stateCollection,featuretransformargs):
-        print 'Transform state'
+        #print 'Transform state'
         agentState= np.append(rawAgentState[0:10] ,rawAgentState [10+2*(self.teamSize-1):10+3*(self.teamSize-1)])
-        print "Agent State: "+str(agentState)
+        #print "Agent State: "+str(agentState)
         teamState=[]
         #Weird Synchronization fix
         stateCollection = [x for x in stateCollection if type(x)!=type(1)]
@@ -168,9 +214,9 @@ class AgentContainer(object):
                 if stateCollection[u][0]!=agentState[0] and stateCollection[u][1]!=agentState[1]:
                     teamState +=  stateCollection[u][0:10].tolist()
             except:
-                print stateCollection
-                print u
-                print stateCollection[u]
+                #print stateCollection
+                #print u
+                #print stateCollection[u]
                 bp()
         opponentState= rawAgentState [10+6*(self.teamSize-1)-1:-1]
         return agentState,teamState,opponentState

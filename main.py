@@ -7,7 +7,7 @@ from agents.randomagent import RandomAgent
 from agents.globals import MyGlobals
 
 
-teamSize =2
+teamSize =6
 opponentsSize=2
 # Define  Environment Configuration
 envargs={}
@@ -25,7 +25,6 @@ env = SoccerEnvironment(envargs)
 
 
 MyGlobals.stateVec=[]
-#from pudb import set_trace; set_trace()
 
 #Initialize Environment and launch a thread
 env.start()
@@ -45,20 +44,21 @@ from multiprocessing.pool import ThreadPool
 import threading
 from threading import Thread
 
-team=[ i+1 for i in range(teamSize+1)]
-opponents = [ i+1 for i in range(opponentsSize+1)]
+team=[ i+1 for i in range(teamSize)]
+opponents = [ i+1 for i in range(opponentsSize)]
 
 
 import Queue as Q
 agents=[]
 q=Q.Queue()
+u2=team[:]
 for i in team:
-    agents.append(RandomAgent( i,team,opponents,actions,actionsEnum))
+    agents.append(RandomAgent( i,u2,opponents,actions,actionsEnum))
 
 agentContainers=[]
 for i in agents:
     agentContainers.append(AgentContainer(i,i.id,teamSize,opponentsSize,q,[],[]))
-
+print len(agentContainers)
 # a1= AgentContainer(RandomAgent(),1)
 # a2 = AgentContainer([],2)
 # a3 = AgentContainer([],3)
@@ -79,7 +79,7 @@ def startPool(agents):
     for i in t:
         i.start()
         time.sleep(1)
-        print i
+        print "STARTING----------------------------------------------------------------------------------------"
 
     for i in t:
         i.join()

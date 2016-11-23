@@ -23,3 +23,8 @@ class RandomAgent(Agent):
         if a==PASS:
             t= random.choice(self.teammates)
         return (a,t)
+
+
+    def perceive(self,agentState,teamState,opponentState,reward):
+        print "Random Action"
+    
