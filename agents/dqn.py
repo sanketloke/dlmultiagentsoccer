@@ -1,8 +1,8 @@
-from baseagent import Agent
 from __future__ import division
+from baseagent import Agent
 from collections import deque
 from copy import deepcopy
-
+import time
 import numpy as np
 import keras.backend as K
 from keras.layers import Lambda, Input, merge, Layer
@@ -12,12 +12,12 @@ from rl.core import Agent
 from rl.policy import EpsGreedyQPolicy
 from rl.util import *
 
-
+from pdb import set_trace as bp
 def mean_q(y_true, y_pred):
     return K.mean(K.max(y_pred, axis=-1))
 
 # Should have a network attribute
-class DQNAgent(Agent):
+#class DQNAgent(Agent):
 
     # """docstring for DQNAgent."""
     # def __init__(self, arg):
@@ -46,8 +46,8 @@ class DQNAgent(Agent):
 class DQNAgent(Agent):
 
 
-    
-    def __init__(self, model, nb_actions, memory, policy=EpsGreedyQPolicy(),
+
+    def __init__(self,  id,teammates,opponents,actions,actionsEnum,model, nb_actions, memory, policy=EpsGreedyQPolicy(),
                  gamma=.99, batch_size=32, nb_steps_warmup=1000, train_interval=1, memory_interval=1,
                  target_model_update=10000, delta_range=(-np.inf, np.inf), enable_double_dqn=True,
                  custom_model_objects={}, processor=None):
@@ -91,6 +91,13 @@ class DQNAgent(Agent):
         # State.
         self.compiled = False
         self.reset_states()
+
+        self.id=id
+        teammates.remove(self.id)
+        self.teammates= teammates
+        self.opponents= opponents
+        self.actions ,self.actionsEnum =actions,actionsEnum
+        self.minAct,self.maxAct=min(self.actions),max(self.actions)
 
     def get_config(self):
         config = {
@@ -314,3 +321,21 @@ class DQNAgent(Agent):
         if self.processor is not None:
             names += self.processor.metrics_names[:]
         return names
+
+    def getAction(self,state):
+        #print "Going In:"+str(state)
+        try:
+            action = self.forward(state)
+        except:
+            #print "Error occured"
+            time.sleep(0.2)
+            action = self.forward(state)
+            #bp()
+        return action
+
+
+
+    def perceive(self,agentState,teamState,opponentState,reward,terminal):
+        self.backward(reward,terminal)
+
+        #print "Perceiving"

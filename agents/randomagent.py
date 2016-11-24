@@ -24,7 +24,5 @@ class RandomAgent(Agent):
             t= random.choice(self.teammates)
         return (a,t)
 
-
-    def perceive(self,agentState,teamState,opponentState,reward):
+    def perceive(self,agentState,teamState,opponentState,reward,terminal):
         print "Random Action"
-    

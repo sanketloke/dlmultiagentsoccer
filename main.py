@@ -7,7 +7,7 @@ from agents.randomagent import RandomAgent
 from agents.globals import MyGlobals
 
 
-teamSize =6
+teamSize =3
 opponentsSize=2
 # Define  Environment Configuration
 envargs={}
@@ -22,9 +22,9 @@ env = SoccerEnvironment(envargs)
 #Initialize Individual Agents
 
 
+#Input Vector: 11 + (teamSize -1)+(teamSize -1)*11 +3 * opponentsSize
 
 
-MyGlobals.stateVec=[]
 
 #Initialize Environment and launch a thread
 env.start()
@@ -87,7 +87,7 @@ def startPool(agents):
 
 #a=[a1,a2,a3,a4,a5]
 
-startPool(agentContainers)
+#startPool(agentContainers)
 
 
 # Iterate till total no of episodes
@@ -101,6 +101,92 @@ print 'Hello'
 #
 
 # Iterate ends
+
+
+
+
+
+
+
+
+import numpy as np
+import gym
+
+from keras.models import Sequential
+from keras.layers import Dense, Activation, Flatten
+from keras.optimizers import Adam
+
+#from rl.agents.dqn import DQNAgent
+from rl.policy import BoltzmannQPolicy
+from rl.memory import SequentialMemory
+from agents.dqn import DQNAgent
+
+
+#from pudb import set_trace; set_trace()
+
+# Get the environment and extract the number of actions.
+nb_actions = 3+(teamSize-1)
+environmentVectorSize=10 + (teamSize -1)*11 +3 * opponentsSize
+print environmentVectorSize
+# Next, we build a very simple model.
+model = Sequential()
+model.add(Flatten(input_shape=(1,) + (environmentVectorSize,)))
+model.add(Dense(16))
+model.add(Activation('relu'))
+model.add(Dense(16))
+model.add(Activation('relu'))
+model.add(Dense(16))
+model.add(Activation('relu'))
+model.add(Dense(nb_actions))
+model.add(Activation('linear'))
+print(model.summary())
+
+# Finally, we configure and compile our agent. You can use every built-in Keras optimizer and
+# even the metrics!
+memory = SequentialMemory(limit=50000, window_length=1)
+policy = BoltzmannQPolicy()
+# dqn = DQNAgent(model=model, nb_actions=nb_actions, memory=memory, nb_steps_warmup=10,
+#                target_model_update=1e-2, policy=policy)
+#dqn.compile(Adam(lr=1e-3), metrics=['mae'])
+
+import Queue as Q
+agents=[]
+q=Q.Queue()
+u2=team[:]
+for i in team:
+    d= DQNAgent( i,u2,opponents,actions,actionsEnum,model=model, nb_actions=nb_actions, memory=memory, nb_steps_warmup=10,target_model_update=1e-2, policy=policy, )
+    d.compile(Adam(lr=1e-3), metrics=['mae'])
+    agents.append(d)
+
+agentContainers=[]
+for i in agents:
+    agentContainers.append(AgentContainer(i,i.id,teamSize,opponentsSize,q,[],[]))
+
+
+
+startPool(agentContainers)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -3,6 +3,7 @@ from hfo import *
 from scripts.environment import SoccerEnvironment
 import time
 from utils import *
+import itertools
 from agents.globals import MyGlobals
 import Queue as Q
 import copy
@@ -68,9 +69,11 @@ class AgentContainer(object):
         rewards= []
 
         print '-----------------------Connection Successful Agent with ID:'+str(self.id)
-        for episode in xrange(100):
+        for episode in xrange(2000):
             print '-----------------------INSIDE EPISODE Agent with ID:'+str(self.id)
             status = IN_GAME
+            total_reward=0
+            freward=0
             # If status is IN_GAME continue
             while status == IN_GAME:
 
@@ -95,26 +98,40 @@ class AgentContainer(object):
 
                 # Calculate reward for the last action
                 reward = self.calculateReward(self.history.getStates(3),agentState,teamState,opponentState,[],status)
-                print "Reward: "+str(reward)
-
+                #print "Reward: "+str(reward)
+                total_reward+=reward
                 # Update Parameters of the agent
-                self.agent.perceive(agentState,teamState,opponentState,reward)
 
+                self.agent.perceive(agentState,teamState,opponentState,reward,False)
+
+                combinedState = list(itertools.chain(agentState,teamState, opponentState))
 
                 # # Predict Action to be performed
-                action,t =self.agent.getAction(state)
-
+                action =self.agent.getAction(np.array(combinedState))
+                action =action +8
                 # Perform the Action
-                if action==MOVE:
+                # if action==int(MOVE):
+                #     hfo.act(MOVE)
+                # elif action==int(SHOOT):
+                #     hfo.act(SHOOT)
+                # elif action==int(PASS):
+                #     hfo.act(PASS,t)
+                # elif action==int(DRIBBLE):
+                #     hfo.act(DRIBBLE)
+                # else:
+                #     action=hfo.act(CATCH)
+
+                if action==8:
                     hfo.act(MOVE)
-                elif action==SHOOT:
-                    hfo.act(SHOOT)
-                elif action==PASS:
-                    hfo.act(PASS,t)
-                elif action==DRIBBLE:
-                    hfo.act(DRIBBLE)
-                else:
-                    action=hfo.act(CATCH)
+                elif action==9:
+                    if state[5]==1:
+                        hfo.act(SHOOT)
+                elif action==10:
+                    if state[5]==1:
+                        hfo.act(DRIBBLE)
+                elif action>=11:
+                    if state[5]==1 and self.id!=2:
+                        action=hfo.act(PASS,2)
 
                 # Advance the environment and get the game status
                 self.q.put(1)
@@ -122,7 +139,27 @@ class AgentContainer(object):
                     with self.q.mutex:
                         self.q.queue.clear()
                 status = hfo.step()
-
+            #status=hfo.step()
+            if status !=IN_GAME:
+                #print "Danger averted"
+                prevState=combinedState
+                #print len(prevState)
+                state=hfo.getState()
+                for i in range(11):
+                    prevState[i]= state[i]
+                #print len(prevState)
+                if status == GOAL:
+                    freward=300
+                elif status ==CAPTURED_BY_DEFENSE:
+                    freward=-200
+                elif status ==OUT_OF_BOUNDS:
+                    freward =  -100*(np.exp(state[6]))
+                elif status == OUT_OF_TIME:
+                    freward = -100*(np.exp(state[6]))
+                reward+=freward
+                self.agent.perceive(agentState,teamState,opponentState,reward,False)
+            print "End Episode Reward for Agent "+str(self.id)+" : "+str(freward)
+            print "Total Reward for Agent "+str(self.id)+" : "+str(total_reward)
             #     #If status is bad, update agent with different rewards and break
             # while (self.q.qsize()!=0):
             #     print "Previous:"+str(self.q.qsize())
@@ -211,12 +248,14 @@ class AgentContainer(object):
         stateCollection = [x for x in stateCollection if type(x)!=type(1)]
         for u in range(len(stateCollection)):
             try:
-                if stateCollection[u][0]!=agentState[0] and stateCollection[u][1]!=agentState[1]:
+                if stateCollection[u][0]!=agentState[0] or stateCollection[u][1]!=agentState[1]:
                     teamState +=  stateCollection[u][0:10].tolist()
             except:
                 #print stateCollection
                 #print u
-                #print stateCollection[u]
+                #print stateCollection[u]\
+                #print "Inside Bad"
                 bp()
+        #print "team state is as :"+str(teamState)
         opponentState= rawAgentState [10+6*(self.teamSize-1)-1:-1]
         return agentState,teamState,opponentState
