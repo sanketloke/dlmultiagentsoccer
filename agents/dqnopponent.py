@@ -1,5 +1,5 @@
 #Misnomer We are modeling team agents Later Change it.
-class DQNOpponentOpponentAgent(DQNAgent):
+class DQNTeamOpponentAgent(DQNATeam gent):
 
     """docstring for DQNOpponentOpponentAgent."""
     def __init__(self, arg):

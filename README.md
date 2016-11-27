@@ -1,10 +1,8 @@
 Deep Reinforcement Learning for Multi Agent Soccer
 
 TODO
-1. Complete Reward Function
-2. Complete State Transform Function
-3. Complete a base DQN agent
-
+1. Complete DQN with Concat and experts of networks
+2. Add support for plotting the reward function over time
 
 References:
 
