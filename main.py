@@ -15,7 +15,7 @@ envargs['offense-agents']=teamSize
 envargs['defense-agents']=0
 envargs['defense-npcs']=opponentsSize
 envargs['offense-npcs']=0
-# TODO support gui-less environment
+
 env = SoccerEnvironment(envargs)
 
 
@@ -59,12 +59,6 @@ agentContainers=[]
 for i in agents:
     agentContainers.append(AgentContainer(i,i.id,teamSize,opponentsSize,q,[],[]))
 print len(agentContainers)
-# a1= AgentContainer(RandomAgent(),1)
-# a2 = AgentContainer([],2)
-# a3 = AgentContainer([],3)
-# a4 = AgentContainer([],4)
-# a5 = AgentContainer([],5)
-#
 
 def startThread(a):
     a.run()
@@ -83,25 +77,6 @@ def startPool(agents):
 
     for i in t:
         i.join()
-
-
-#a=[a1,a2,a3,a4,a5]
-
-#startPool(agentContainers)
-
-
-# Iterate till total no of episodes
-
-print 'Hello'
-# for i in range(total_episodes):
-# 	Observe inputs from all agents
-#	Wait till we receive from all of them
-#	Aggregate them
-#	Pass the aggregated inputs to the agents, compute the actions
-#
-
-# Iterate ends
-
 
 
 
@@ -130,7 +105,6 @@ environmentVectorSize=10 + (teamSize -1)*11 +3 * opponentsSize
 print environmentVectorSize
 # Next, we build a very simple model.
 
-#print(model.summary())
 
 # Finally, we configure and compile our agent. You can use every built-in Keras optimizer and
 # even the metrics!

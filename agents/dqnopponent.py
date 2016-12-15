@@ -9,7 +9,6 @@ class DQNTeamOpponentAgent(DQNATeam gent):
         super(DQNOpponentOpponentAgent, self).__init__()
         self.arg = arg
 
-
     def createNetwork_fc2():
         print "Create Concatenation network"
 
